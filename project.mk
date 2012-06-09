@@ -1,0 +1,3 @@
+PROJECTSRC = main.c
+
+PROJECTINC = .
