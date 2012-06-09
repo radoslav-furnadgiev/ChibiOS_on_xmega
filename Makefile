@@ -1,4 +1,4 @@
-CHIBIOS     = ../ChibiOS
+CHIBIOS     = ./ChibiOS
 PORTDIR     = ./ports/GCC/AVRXMEGA
 BOARDDIR    = ./boards/ATMEL_XPLAIN
 PLATFORMDIR = ./hal/platforms/AVRXMEGA
