@@ -56,7 +56,7 @@ const PALConfig pal_default_config =
 /**
  * @brief   Timer0 interrupt handler.
  */
-CH_IRQ_HANDLER(TIMER0_COMP_vect) {
+CH_IRQ_HANDLER(TCC0_OVF_vect) {
 
   CH_IRQ_PROLOGUE();
 
@@ -75,23 +75,19 @@ void boardInit(void) {
   /*
    * External interrupts setup, all disabled initially.
    */
-  EICRA  = 0x00;
-  EICRB  = 0x00;
-  EIMSK  = 0x00;
+//  EICRA  = 0x00;
+//  EICRB  = 0x00;
+//  EIMSK  = 0x00;
 
   /*
    * Enables Idle mode for SLEEP instruction.
    */
-  MCUCR  = (1 << SE);
+//  MCUCR  = (1 << SE);
 
-  /*
-   * Timer 0 setup.
-   */
-  TCCR0  = (1 << WGM01) | (0 << WGM00) |                /* CTC mode.        */
-           (0 << COM01) | (0 << COM00) |                /* OC0A disabled.   */
-           (1 << CS02)  | (0 << CS01)  | (0 << CS00);   /* CLK/64 clock.    */
-  OCR0   = F_CPU / 64 / CH_FREQUENCY - 1;
-  TCNT0  = 0;                                           /* Reset counter.   */
-  TIFR   = (1 << OCF0);                                 /* Reset pending.   */
-  TIMSK  = (1 << OCIE0);                                /* IRQ on compare.  */
+	TCC0.CTRLA = TC_CLKSEL_DIV8_gc;
+	TCC0.PER = F_CPU / 8 / CH_FREQUENCY - 1;
+	TCC0.INTCTRLA = TC_OVFINTLVL_HI_gc;
+	PMIC.CTRL |= PMIC_HILVLEN_bm;
+//  This (enabling interrupts) happens elsewhere 
+//	chSysUnlock();
 }

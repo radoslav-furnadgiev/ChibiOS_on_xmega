@@ -4,6 +4,11 @@ BOARDDIR    = ./boards/ATMEL_XPLAIN
 PLATFORMDIR = ./hal/platforms/AVRXMEGA
 PROJECTDIR  = .
 
+TARGET      = Xtest
+
+CFLAGS      = -fomit-frame-pointer -Os -ggdb -Wl,-static -fdata-sections -ffunction-sections -DF_CPU=32000000 -Wall
+LDFLAGS     = -Wl,--gc-sections
+
 include $(CHIBIOS)/os/kernel/kernel.mk
 include $(CHIBIOS)/os/hal/hal.mk
 include $(PLATFORMDIR)/platform.mk
@@ -29,14 +34,18 @@ INCDIRS =   -I$(KERNINC) \
             -I$(PROJECTINC)
 
 OBJECTS = $(SOURCES:.c=.o)
-.PHONY: obj
 
-obj: $(OBJECTS)
+all: $(TARGET).elf
+
+$(TARGET).elf: $(OBJECTS)
+	avr-gcc $(LDFLAGS) -o $@ $(OBJECTS)
+
 %.o: %.c
-	avr-gcc -c -mmcu=$(MCU) $(INCDIRS) -o $@ $<
+	avr-gcc $(CFLAGS) $(INCDIRS) -c -o $@ $<
 
 
 .PHONY: clean
 
 clean:
 	rm -rf $(OBJECTS)
+	rm -rf $(TARGET).elf
