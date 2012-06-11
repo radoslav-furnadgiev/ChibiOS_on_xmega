@@ -16,11 +16,18 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+                                      ---
+
+    A special exception to the GPL can be applied should you wish to distribute
+    a combined work that includes ChibiOS/RT, without being obliged to provide
+    the source code for any proprietary components. See the file exception.txt
+    for full details of how and when the exception can be applied.
 */
 
 /**
- * @file    AVR/serial_lld.h
- * @brief   AVR low level serial driver header.
+ * @file    xAVR/serial_lld.h
+ * @brief   AVR XMEGA low level serial driver header.
  *
  * @addtogroup SERIAL
  * @{
@@ -40,21 +47,12 @@
 /*===========================================================================*/
 
 /**
- * @brief   USART0 driver enable switch.
- * @details If set to @p TRUE the support for USART0 is included.
+ * @brief   USARTC1 driver enable switch.
+ * @details If set to @p TRUE the support for USARTC1 is included.
  * @note    The default is @p FALSE.
  */
-#if !defined(USE_AVR_USART0) || defined(__DOXYGEN__)
-#define USE_AVR_USART0              TRUE
-#endif
-
-/**
- * @brief   USART1 driver enable switch.
- * @details If set to @p TRUE the support for USART1 is included.
- * @note    The default is @p TRUE.
- */
-#if !defined(USE_AVR_USART1) || defined(__DOXYGEN__)
-#define USE_AVR_USART1              TRUE
+#if !defined(USE_XMEGA_USARTC1) || defined(__DOXYGEN__)
+#define USE_XMEGA_USARTC1              TRUE
 #endif
 
 /*===========================================================================*/
@@ -66,19 +64,28 @@
 /*===========================================================================*/
 
 /**
- * @brief   AVR Serial Driver configuration structure.
+ * @brief   AVR XMEGA Serial Driver configuration structure.
  * @details An instance of this structure must be passed to @p sdStart()
  *          in order to configure and start a serial driver operations.
  */
 typedef struct {
   /**
-   * @brief Initialization value for the BRR register.
+   * @brief Initialization value for CTRLB
    */
-  uint16_t                  sc_brr;
+  uint8_t                  sc_ctrlb;
   /**
-   * @brief Initialization value for the CSRC register.
+   * @brief Initialization value for CTRLC
    */
-  uint8_t                   sc_csrc;
+  uint8_t                  sc_ctrlc;
+  /**
+   * @brief Initialization value for BAUDCTRLA
+   */
+  uint8_t                  sc_baudctrla;
+    /**
+   * @brief Initialization value for BAUDCTRLB
+   */
+  uint8_t                  sc_baudctrlb;
+
 } SerialConfig;
 
 /**
@@ -102,42 +109,14 @@ typedef struct {
 /* Driver macros.                                                            */
 /*===========================================================================*/
 
-/**
- * @brief   Macro for baud rate computation.
- * @note    Make sure the final baud rate is within tolerance.
- */
-#define UBRR(b)     (((F_CPU / b) >> 4) - 1)
-
-/**
- * @brief   Macro for baud rate computation when U2Xn == 1.
- * @note    Make sure the final baud rate is within tolerance.
- */
-#define UBRR2(b)    (((F_CPU / b) >> 3) - 1)
-
-/**
-* @brief   Macro for baud rate computation.
-* @note    Make sure the final baud rate is within tolerance.
-* @note    This version uses floating point math for greater accuracy.
-*/
-#define UBRR_F(b)   ((((double) F_CPU / (double) b) / 16.0) - 0.5)
-
-/**
-* @brief   Macro for baud rate computation when U2Xn == 1.
-* @note    Make sure the final baud rate is within tolerance.
-* @note    This version uses floating point math for greater accuracy.
-*/
-#define UBRR2_F(b)  ((((double) F_CPU / (double) b) / 8.0) - 0.5)
-
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/
 
-#if USE_AVR_USART0 && !defined(__DOXYGEN__)
-extern SerialDriver SD1;
+#if USE_XMEGA_USARTC1 && !defined(__DOXYGEN__)
+extern SerialDriver SDC1;
 #endif
-#if USE_AVR_USART1 && !defined(__DOXYGEN__)
-extern SerialDriver SD2;
-#endif
+
 
 #ifdef __cplusplus
 extern "C" {

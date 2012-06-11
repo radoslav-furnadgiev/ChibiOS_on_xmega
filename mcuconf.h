@@ -45,8 +45,7 @@
 /*
  * SERIAL driver system settings.
  */
-#define USE_AVR_USART0              FALSE
-#define USE_AVR_USART1              TRUE
+#define USE_AVR_USARTC1             TRUE
 
 /*
  * SPI driver system settings.

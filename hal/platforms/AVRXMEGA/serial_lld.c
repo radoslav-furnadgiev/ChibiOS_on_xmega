@@ -16,6 +16,13 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+                                      ---
+
+    A special exception to the GPL can be applied should you wish to distribute
+    a combined work that includes ChibiOS/RT, without being obliged to provide
+    the source code for any proprietary components. See the file exception.txt
+    for full details of how and when the exception can be applied.
 */
 
 /**
@@ -36,21 +43,12 @@
 /*===========================================================================*/
 
 /**
- * @brief   USART0 serial driver identifier.
+ * @brief   USARTC10 serial driver identifier.
  * @note    The name does not follow the convention used in the other ports
  *          (COMn) because a name conflict with the AVR headers.
  */
-#if USE_AVR_USART0 || defined(__DOXYGEN__)
-SerialDriver SD1;
-#endif
-
-/**
- * @brief   USART1 serial driver identifier.
- * @note    The name does not follow the convention used in the other ports
- *          (COMn) because a name conflict with the AVR headers.
- */
-#if USE_AVR_USART1 || defined(__DOXYGEN__)
-SerialDriver SD2;
+#if USE_XMEGA_USARTC1 || defined(__DOXYGEN__)
+SerialDriver SDC1;
 #endif
 
 /*===========================================================================*/
@@ -60,9 +58,12 @@ SerialDriver SD2;
 /**
  * @brief   Driver default configuration.
  */
+/************************************************************ FIX ME *****************************************************/
 static const SerialConfig default_config = {
-  UBRR(SERIAL_DEFAULT_BITRATE),
-  (1 << UCSZ1) | (1 << UCSZ0)
+  0,
+  0,
+  0,
+  0
 };
 
 /*===========================================================================*/
@@ -70,56 +71,28 @@ static const SerialConfig default_config = {
 /*===========================================================================*/
 
 static void set_error(uint8_t sra, SerialDriver *sdp) {
-  chnflags_t sts = 0;
+  ioflags_t sts = 0;
 
-  if (sra & (1 << DOR))
+  if (sra & USART_BUFOVF_bm)
     sts |= SD_OVERRUN_ERROR;
-  if (sra & (1 << UPE))
+  if (sra & USART_PERR_bm)
     sts |= SD_PARITY_ERROR;
-  if (sra & (1 << FE))
+  if (sra & USART_FERR_bm)
     sts |= SD_FRAMING_ERROR;
   chSysLockFromIsr();
-  chnAddFlagsI(sdp, sts);
+  chIOAddFlagsI(sdp, sts);
   chSysUnlockFromIsr();
 }
 
-#if USE_AVR_USART0 || defined(__DOXYGEN__)
-static void notify1(GenericQueue *qp) {
+
+
+/************************************************************ FIX ME *****************************************************/
+#if USE_XMEGA_USARTC1 || defined(__DOXYGEN__)
+static void notifyC1(GenericQueue *qp) {
 
   (void)qp;
-  UCSR0B |= (1 << UDRIE);
-}
-
-/**
- * @brief   USART0 initialization.
- *
- * @param[in] config    the architecture-dependent serial driver configuration
- */
-static void usart0_init(const SerialConfig *config) {
-
-  UBRR0L = config->sc_brr;
-  UBRR0H = config->sc_brr >> 8;
-  UCSR0A = 0;
-  UCSR0B = (1 << RXEN) | (1 << TXEN) | (1 << RXCIE);
-  UCSR0C = config->sc_csrc;
-}
-
-/**
- * @brief   USART0 de-initialization.
- */
-static void usart0_deinit(void) {
-
-  UCSR0A = 0;
-  UCSR0B = 0;
-  UCSR0C = 0;
-}
-#endif
-
-#if USE_AVR_USART1 || defined(__DOXYGEN__)
-static void notify2(GenericQueue *qp) {
-
-  (void)qp;
-  UCSR1B |= (1 << UDRIE);
+  USARTC1.CTRLA &= ~USART_DREINTLVL_gm;
+  USARTC1.CTRLA |= USART_DREINTLVL_MED_gc;
 }
 
 /**
@@ -127,23 +100,24 @@ static void notify2(GenericQueue *qp) {
  *
  * @param[in] config    the architecture-dependent serial driver configuration
  */
-static void usart1_init(const SerialConfig *config) {
+/************************************************************ FIX ME *****************************************************/
+static void usartC1_init(const SerialConfig *config) {
 
-  UBRR1L = config->sc_brr;
-  UBRR1H = config->sc_brr >> 8;
-  UCSR1A = 0;
-  UCSR1B = (1 << RXEN) | (1 << TXEN) | (1 << RXCIE);
-  UCSR1C = config->sc_csrc;
+  USARTC1.BAUDCTRLA = config->sc_baudctrla;
+  USARTC1.BAUDCTRLB = config->sc_baudctrlb;
+  USARTC1.CTRLC = config->sc_ctrlc;
+  USARTC1.CTRLB = config->sc_ctrlb | USART_RXEN_bm | USART_TXEN_bm;
+  USARTC1.CTRLA = USART_RXCINTLVL_MED_gc;
 }
 
 /**
  * @brief   USART1 de-initialization.
  */
-static void usart1_deinit(void) {
+static void usartC1_deinit(void) {
 
-  UCSR1A = 0;
-  UCSR1B = 0;
-  UCSR1C = 0;
+  USARTC1.CTRLA = 0;
+  USARTC1.CTRLB &= ~(USART_TXEN_bm | USART_RXEN_bm);
+  
 }
 #endif
 
@@ -151,91 +125,46 @@ static void usart1_deinit(void) {
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
 
-#if USE_AVR_USART0 || defined(__DOXYGEN__)
+#if USE_XMEGA_USARTC1 || defined(__DOXYGEN__)
 /**
- * @brief   USART0 RX interrupt handler.
+ * @brief   USARTC1 RX interrupt handler.
  *
  * @isr
  */
-CH_IRQ_HANDLER(USART0_RX_vect) {
-  uint8_t sra;
-
-  CH_IRQ_PROLOGUE();
-
-  sra = UCSR0A;
-  if (sra & ((1 << DOR) | (1 << UPE) | (1 << FE)))
-    set_error(sra, &SD1);
-  chSysLockFromIsr();
-  sdIncomingDataI(&SD1, UDR0);
-  chSysUnlockFromIsr();
-
-  CH_IRQ_EPILOGUE();
+CH_IRQ_HANDLER(USARTC1_RXC_vect) {
+	uint8_t status;
+	CH_IRQ_PROLOGUE();
+	
+	status = USARTC1.STATUS;
+	if ( status & (USART_FERR_bm | USART_PERR_bm | USART_BUFOVF_bm))
+		set_error(status, &SDC1);
+	chSysUnlockFromIsr();
+	sdIncomingDataI(&SDC1, USARTC1.DATA);
+	chSysUnlockFromIsr();
+	
+	CH_IRQ_PROLOGUE();
 }
 
 /**
- * @brief   USART0 TX interrupt handler.
+ * @brief   USARTC1 TX interrupt handler.
  *
  * @isr
  */
-CH_IRQ_HANDLER(USART0_UDRE_vect) {
-  msg_t b;
-
-  CH_IRQ_PROLOGUE();
-
-  chSysLockFromIsr();
-  b = sdRequestDataI(&SD1);
-  chSysUnlockFromIsr();
-  if (b < Q_OK)
-    UCSR0B &= ~(1 << UDRIE);
-  else
-    UDR0 = b;
-
-  CH_IRQ_EPILOGUE();
+CH_IRQ_HANDLER(USARTC1_DRE_vect) {
+	msg_t b;
+	CH_IRQ_PROLOGUE();
+	
+	chSysLockFromIsr();
+	b = sdRequestDataI(&SDC1);
+	chSysUnlockFromIsr();
+	if( b < Q_OK)
+		USARTC1.CTRLA &= ~USART_DREINTLVL_gm;
+	else
+		USARTC1.DATA = b;
+	
+	CH_IRQ_PROLOGUE();
 }
-#endif /* USE_AVR_USART0 */
-
-#if USE_AVR_USART1 || defined(__DOXYGEN__)
-/**
- * @brief   USART1 RX interrupt handler.
- *
- * @isr
- */
-CH_IRQ_HANDLER(USART1_RX_vect) {
-  uint8_t sra;
-
-  CH_IRQ_PROLOGUE();
-
-  sra = UCSR1A;
-  if (sra & ((1 << DOR) | (1 << UPE) | (1 << FE)))
-    set_error(sra, &SD2);
-  chSysLockFromIsr();
-  sdIncomingDataI(&SD2, UDR1);
-  chSysUnlockFromIsr();
-
-  CH_IRQ_EPILOGUE();
-}
-
-/**
- * @brief   USART1 TX interrupt handler.
- *
- * @isr
- */
-CH_IRQ_HANDLER(USART1_UDRE_vect) {
-  msg_t b;
-
-  CH_IRQ_PROLOGUE();
-
-  chSysLockFromIsr();
-  b = sdRequestDataI(&SD2);
-  chSysUnlockFromIsr();
-  if (b < Q_OK)
-    UCSR1B &= ~(1 << UDRIE);
-  else
-    UDR1 = b;
-
-  CH_IRQ_EPILOGUE();
-}
-#endif /* USE_AVR_USART1 */
+#endif /* USE_XMEGA_USARTC1 */
 
 /*===========================================================================*/
 /* Driver exported functions.                                                */
@@ -248,11 +177,8 @@ CH_IRQ_HANDLER(USART1_UDRE_vect) {
  */
 void sd_lld_init(void) {
 
-#if USE_AVR_USART0
-  sdObjectInit(&SD1, NULL, notify1);
-#endif
-#if USE_AVR_USART1
-  sdObjectInit(&SD2, NULL, notify2);
+#if USE_XMEGA_USARTC1
+  sdObjectInit(&SDC1, NULL, notifyC1);
 #endif
 }
 
@@ -271,15 +197,9 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
   if (config == NULL)
     config = &default_config;
 
-#if USE_AVR_USART0
-  if (&SD1 == sdp) {
-    usart0_init(config);
-    return;
-  }
-#endif
-#if USE_AVR_USART1
-  if (&SD2 == sdp) {
-    usart1_init(config);
+#if USE_XMEGA_USARTC1
+  if (&SDC1 == sdp) {
+    usartC1_init(config);
     return;
   }
 #endif
@@ -296,13 +216,9 @@ void sd_lld_start(SerialDriver *sdp, const SerialConfig *config) {
  */
 void sd_lld_stop(SerialDriver *sdp) {
 
-#if USE_AVR_USART0
-  if (&SD1 == sdp)
-    usart0_deinit();
-#endif
-#if USE_AVR_USART1
-  if (&SD2 == sdp)
-    usart1_deinit();
+#if USE_AVR_USARTC1
+  if (&SDC1 == sdp)
+    usartC1_deinit();
 #endif
 }
 
