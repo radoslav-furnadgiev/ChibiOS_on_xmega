@@ -1,8 +1,8 @@
 # List of all the board related files.
-BOARDSRC = ${PROJECTDIR}/boards/ATMEL_XPLAIN/board.c
+BOARDSRC = ${BOARDDIR}/board.c
 
 # Required include directories
-BOARDINC = ${PROJECTDIR}/boards/ATMEL_XPLAIN
+BOARDINC = ${BOARDDIR}
 
 #Board specific build flags
 CFLAGS += -mmcu=atxmega128a1

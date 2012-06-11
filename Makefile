@@ -1,10 +1,10 @@
 CHIBIOS     = ./ChibiOS
-PORTDIR     = ./ports/GCC/AVRXMEGA
-BOARDDIR    = ./boards/ATMEL_XPLAIN
-PLATFORMDIR = ./hal/platforms/AVRXMEGA
-PROJECTDIR  = .
+PORTDIR     = ./xmega_port/os/ports/GCC/AVRXMEGA
+BOARDDIR    = ./xmega_port/boards/ATMEL_XPLAIN
+PLATFORMDIR = ./xmega_port/os/hal/platforms/AVRXMEGA
+PROJECTDIR  = ./xmega_demo
 
-TARGET      = Xtest
+TARGET      = xmega_demo
 
 CFLAGS      = -fomit-frame-pointer -Os -ggdb -Wl,-static -fdata-sections -ffunction-sections -DF_CPU=32000000 -Wall
 LDFLAGS     = -Wl,--gc-sections
