@@ -1,0 +1,6 @@
+GETTING STARTED
+A clone of ChibiOS must be created using the following command:
+git submodule update --init
+
+To build simply run:
+make
