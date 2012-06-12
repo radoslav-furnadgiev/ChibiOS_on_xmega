@@ -5,5 +5,6 @@ BOARDSRC = ${BOARDDIR}/board.c
 BOARDINC = ${BOARDDIR}
 
 #Board specific build flags
-CFLAGS += -mmcu=atxmega128a1
-LDFLAGS += -mmcu=atxmega128a1
+MCU=atxmega128a1
+CFLAGS += -mmcu=$(MCU)
+LDFLAGS += -mmcu=$(MCU)
