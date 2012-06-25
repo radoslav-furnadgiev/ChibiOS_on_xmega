@@ -39,6 +39,7 @@ all: $(TARGET).elf
 
 $(TARGET).elf: $(OBJECTS)
 	avr-gcc $(LDFLAGS) -o $@ $(OBJECTS)
+	avr-size --format=avr --mcu=$(MCU) $(TARGET).elf
 
 %.o: %.c
 	avr-gcc $(CFLAGS) $(INCDIRS) -c -o $@ $<
