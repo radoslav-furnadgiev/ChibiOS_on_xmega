@@ -19,10 +19,10 @@
 */
 
 /**
- * @file    AVR/chcore.h
- * @brief   AVR architecture port macros and structures.
+ * @file    AVRXMEGA/chcore.h
+ * @brief   AVR XMega architecture port macros and structures.
  *
- * @addtogroup AVR_CORE
+ * @addtogroup AVRXMEGA_CORE
  * @{
  */
 
@@ -56,7 +56,7 @@
 /**
  * @brief   Name of the architecture variant (optional).
  */
-#define CH_CORE_VARIANT_NAME            "MegaAVR"
+#define CH_CORE_VARIANT_NAME            "XMegaAVR"
 
 /**
  * @brief   Name of the compiler supported by this port.
@@ -97,7 +97,11 @@ struct extctx {
   uint8_t       sr;
   uint8_t       r1;
   uint8_t       r0;
-  uint16_t      pc;
+#if defined(__AVR_3_BYTE_PC__) && __AVR_3_BYTE_PC__
+  uint8_t       pc2;
+#endif
+  uint8_t       pc1;
+  uint8_t       pc0;
 };
 
 /**
@@ -127,8 +131,11 @@ struct intctx {
   uint8_t       r4;
   uint8_t       r3;
   uint8_t       r2;
-  uint8_t       pcl;
-  uint8_t       pch;
+#if defined(__AVR_3_BYTE_PC__) && __AVR_3_BYTE_PC__
+  uint8_t       pc2;
+#endif
+  uint8_t       pc1;
+  uint8_t       pc0;
 };
 
 /**
@@ -144,8 +151,13 @@ struct context {
 /**
  * @brief   Platform dependent part of the @p chThdCreateI() API.
  * @details This code usually setup the context switching frame represented
- *          by an @p intctx structure.
+ *          by an @p intctx structure.  Due to compiler limitations 
+ *          _port_thread_start must be located below 128k in flash.
+ *          As of 2012/06/25 avr-gcc only supports 16 bit pointers; Therefore
+ *          in >128k devices the high byte of the PC is set to 0.
  */
+#if defined(__AVR_3_BYTE_PC__) && __AVR_3_BYTE_PC__
+
 #define SETUP_CONTEXT(workspace, wsize, pf, arg) {                          \
   tp->p_ctx.sp = (struct intctx*)((uint8_t *)workspace + wsize  -           \
                                   sizeof(struct intctx));                   \
@@ -153,9 +165,25 @@ struct context {
   tp->p_ctx.sp->r3  = (int)pf >> 8;                                         \
   tp->p_ctx.sp->r4  = (int)arg;                                             \
   tp->p_ctx.sp->r5  = (int)arg >> 8;                                        \
-  tp->p_ctx.sp->pcl = (int)_port_thread_start >> 8;                         \
-  tp->p_ctx.sp->pch = (int)_port_thread_start;                              \
+  tp->p_ctx.sp->pc2 = (int)0;												\
+  tp->p_ctx.sp->pc1 = (int)_port_thread_start >> 8;                         \
+  tp->p_ctx.sp->pc0 = (int)_port_thread_start;                              \
 }
+
+#else
+
+#define SETUP_CONTEXT(workspace, wsize, pf, arg) {                        \
+tp->p_ctx.sp = (struct intctx*)((uint8_t *)workspace + wsize  -           \
+                                sizeof(struct intctx));                   \
+tp->p_ctx.sp->r2  = (int)pf;                                              \
+tp->p_ctx.sp->r3  = (int)pf >> 8;                                         \
+tp->p_ctx.sp->r4  = (int)arg;                                             \
+tp->p_ctx.sp->r5  = (int)arg >> 8;                                        \
+tp->p_ctx.sp->pc1 = (int)_port_thread_start >> 8;                         \
+tp->p_ctx.sp->pc0 = (int)_port_thread_start;                              \
+}
+
+#endif
 
 /**
  * @brief   Stack size for the system idle thread.

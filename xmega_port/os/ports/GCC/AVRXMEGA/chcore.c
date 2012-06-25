@@ -63,6 +63,18 @@ void port_switch(Thread *ntp, Thread *otp) {
   asm volatile ("push    r17");
   asm volatile ("push    r28");
   asm volatile ("push    r29");
+#if defined(EIND) && EIND              // If EIND is available so is RAMP[D,X-Z]
+  asm volatile ("in      r2, 0x38");   //RAMPD
+  asm volatile ("push    r2");
+  asm volatile ("in      r2, 0x39");   //RAMPX
+  asm volatile ("push    r2");
+  asm volatile ("in      r2, 0x3a");   //RAMPY
+  asm volatile ("push    r2");
+  asm volatile ("in      r2, 0x3b");   //RAMPZ
+  asm volatile ("push    r2");
+  asm volatile ("in      r2, 0x3c");   //EIND
+  asm volatile ("push    r2");
+#endif                                 //#if defined(EIND) && EIND
 
   asm volatile ("movw    r30, r22");
   asm volatile ("in      r0, 0x3d");
@@ -76,6 +88,19 @@ void port_switch(Thread *ntp, Thread *otp) {
   asm volatile ("ldd     r0, Z+6");
   asm volatile ("out     0x3e, r0");
 
+#if defined(EIND) && EIND              // If EIND is available so is RAMP[D,X-Z]
+  asm volatile ("pop     r2");         //EIND
+  asm volatile ("out     0x3c, r2");
+  asm volatile ("pop     r2");         //RAMPZ
+  asm volatile ("out     0x3b, r2");
+  asm volatile ("pop     r2");         //RAMPY
+  asm volatile ("out     0x3a, r2");
+  asm volatile ("pop     r2");         //RAMPX
+  asm volatile ("out     0x39, r2");
+  asm volatile ("pop     r2");         //RAMPD
+  asm volatile ("out     0x38, r2");
+#endif                                 //#if defined(EIND) && EIND
+  
   asm volatile ("pop     r29");
   asm volatile ("pop     r28");
   asm volatile ("pop     r17");
