@@ -23,6 +23,7 @@ msg_t vThread1(void* arg) {
 		i = i;
 		chThdSleepUntil(time);
 	}
+        return 0;
 }
 
 msg_t vThread2(void* arg) {
@@ -33,6 +34,7 @@ msg_t vThread2(void* arg) {
 		i = i;
 		chThdSleepUntil(time);
 	}
+        return 0;
 }
 
 
